@@ -1,0 +1,124 @@
+version: '3'
+services:
+    front:
+        image: alexsuch/angular-cli:7.2.2
+        restart: always
+        ports:
+            - "4200:4200"
+#        links:
+#            - api
+        volumes:
+            - ./front:/front
+        command: npm start
+        working_dir: /front
+        container_name: front
+        hostname: tnm-front
+        networks:
+            tournament_net:
+                ipv4_address: 172.28.0.3
+
+    admin:
+        image: alexsuch/angular-cli:1.7.3
+        restart: always
+        ports:
+            - "4400:4400"
+#        links:
+#            - api
+        volumes:
+            - ./admin:/admin
+        command: npm start
+        working_dir: /admin
+        container_name: admin
+        hostname: tnm-admin
+        networks:
+            tournament_net:
+                ipv4_address: 172.28.0.4
+
+#    front4:
+#        image: alexsuch/angular-cli
+#        restart: always
+#        ports:
+#            - "4201:4201"
+##        links:
+##            - api
+#        volumes:
+#            - ./frontend-ng4:/frontend
+#        command: npm start
+#        working_dir: /frontend
+#        container_name: front4
+#        hostname: tnm-front4
+#        networks:
+#            tournament_net:
+#                ipv4_address: 172.28.0.5
+
+    api:
+        image: shincoder/homestead:php7.1
+        restart: always
+        ports:
+            - "8000:8000" # web
+#        links:
+#            - db
+        volumes:
+            - ./api:/api
+        env_file: ./api/.env
+        working_dir: /api
+        command: php artisan serve --host=0.0.0.0
+#        onrun: bash -c "/serve.sh tournament.api /api/public"
+        container_name: api
+        hostname: tnm-api
+        networks:
+            tournament_net:
+                ipv4_address: 172.28.0.2
+
+    db:
+        image: tutum/mariadb
+        restart: always
+        ports:
+            - "3306:3306"
+#        environment:
+#            MARIADB_USER: root # cannot be changed ( for info. only )
+#            MARIADB_PASS: secret
+        volumes:
+            - ./api/bin:/db/api
+            - ./TournamentOld/bin:/db/TournamentOld
+        container_name: db
+        hostname: tnm-db
+        networks:
+            tournament_net:
+                ipv4_address: 172.28.0.10
+
+#    front:
+#        image: alexsuch/angular-cli
+#        restart: always
+#        ports:
+#            - "4300:4200"
+#        links:
+#            - backend
+#        container_name: front
+#        volumes:
+#            - ./front-old:/front
+#        command: npm start
+#        working_dir: /front
+#
+#    backend:
+#        image: shincoder/homestead:php7.0
+#        restart: always
+#        ports:
+#            - "8001:8000" # web
+#        links:
+#            - mariadb
+#        container_name: tournament_backend
+#        volumes:
+#            - ./TournamentOld:/api
+#        env_file: ./api/.env
+#        hostname: TournamentOld-api
+#        working_dir: /api
+#        command: php artisan serve --host=0.0.0.0
+##        onrun: bash -c "/serve.sh old.api /bms/public"
+
+networks:
+    tournament_net:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.28.0.0/24

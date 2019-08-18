@@ -1,0 +1,92 @@
+#!/bin/bash
+
+function usage {
+    cat <<EOF
+Usage:
+  $0 [command]
+
+Available commands:
+    start               start application in development
+    stop                stop application in development
+    restart             restart application in development
+    restart:front       restart front container
+
+    front               run command in front container
+    db                  run command in db container
+    api                 run command in api container
+    admin               run command in admin container
+
+    mysql               mysql cli
+    log                 laravel error logs
+
+    dbrefresh           drop, create and seed db
+    generate:entities   regenerate entities base on doctrine generator command
+    composer:autoload   dump composer autload file in api container
+
+    generate:entities   generate doctrine entities
+
+    dump:autoload       dump composer autoload
+
+    fonticons:admin     generate font icon''s css for admin project
+EOF
+    exit 1
+}
+
+now="$(date +'%Y%m%d')"
+
+case $1 in
+    "start")
+        sh commands/start.sh $*
+    ;;
+    "stop")
+        docker-compose down
+    ;;
+    "restart")
+        $0 stop
+        $0 start
+    ;;
+    "restart:front")
+        docker restart front
+    ;;
+    "front")
+        docker exec -t front sh -c "${*:2}"
+    ;;
+    "admin")
+        docker exec -t admin sh -c "${*:2}"
+    ;;
+    "db")
+        docker exec -t db bash -c "${*:2}"
+    ;;
+    "mysql")
+        docker exec -it db bash -c "mysql tournament"
+    ;;
+    "api")
+        docker exec -t api bash -c "${*:2}"
+    ;;
+    "log")
+        tail -f api/storage/logs/laravel.log
+    ;;
+    "dbrefresh")
+        $0 api "php artisan doctrine:schema:drop --force"
+        $0 api "php artisan doctrine:schema:create"
+        $0 api "php artisan db:seed"
+    ;;
+    "generate:entities")
+        $0 api php artisan doctrine:generate:entities --generate-methods\ --update-entities
+    ;;
+    "dump:autoload")
+        $0 api composer dump-autoload -o
+    ;;
+    "fonticons:admin")
+        icon-font-generator utilities/font-icon/tour-fonticon/*.svg \
+            -o admin/src/styles/font-icon/fonts/ \
+            --csspath admin/src/styles/font-icon/icon.css \
+            -n i \
+            --html false \
+            -j false \
+            --fontspath "./fonts"
+    ;;
+    *)
+        usage
+    ;;
+esac
